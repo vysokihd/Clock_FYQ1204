@@ -10,7 +10,7 @@
 #include "display.h"
 #include "main.h"
 
-//Выбор типа дисплея
+//Р’С‹Р±РѕСЂ С‚РёРїР° РґРёСЃРїР»РµСЏ
 #if defined(COMMON_ANODE)
 	#define SETPORT(por, mask)	por &= ~(mask)	
 	#define CLRPORT(por, mask)	por |= (mask)
@@ -25,12 +25,12 @@
 static uint8_t dispBufer [DISPLAY_DIGITS];
 static uint8_t animBufer [DISPLAY_DIGITS];
 static uint8_t activeDig;
-static uint8_t animState;			//стадия анимации цифр
-static bool	animBusy = false;		//true - начата анимация, fasle - анимация не активна
-static uint8_t blinkBitmask;		//маска цифр, которые должны мигать
-static uint8_t blinkTime;			//время мигания (1 = 100мс)
-static bool blinkDigits = false;	//true - зажигать, false - не зажигать цифру
-static bool dispOn = true;			//true - разрешить, false - запретить индикацию
+static uint8_t animState;			//СЃС‚Р°РґРёСЏ Р°РЅРёРјР°С†РёРё С†РёС„СЂ
+static bool	animBusy = false;		//true - РЅР°С‡Р°С‚Р° Р°РЅРёРјР°С†РёСЏ, fasle - Р°РЅРёРјР°С†РёСЏ РЅРµ Р°РєС‚РёРІРЅР°
+static uint8_t blinkBitmask;		//РјР°СЃРєР° С†РёС„СЂ, РєРѕС‚РѕСЂС‹Рµ РґРѕР»Р¶РЅС‹ РјРёРіР°С‚СЊ
+static uint8_t blinkTime;			//РІСЂРµРјСЏ РјРёРіР°РЅРёСЏ (1 = 100РјСЃ)
+static bool blinkDigits = false;	//true - Р·Р°Р¶РёРіР°С‚СЊ, false - РЅРµ Р·Р°Р¶РёРіР°С‚СЊ С†РёС„СЂСѓ
+static bool dispOn = true;			//true - СЂР°Р·СЂРµС€РёС‚СЊ, false - Р·Р°РїСЂРµС‚РёС‚СЊ РёРЅРґРёРєР°С†РёСЋ
 
 
 static void SetClearSegment(uint8_t set, uint8_t clear);
@@ -58,7 +58,7 @@ void DotsBlinkOn()
 
 void DotsBlink()
 {
-	//проверка времени
+	//РїСЂРѕРІРµСЂРєР° РІСЂРµРјРµРЅРё
 	if(timer[DOTS_BLINK] != 0) return;
 	
 	if(dotsStatus == true)
@@ -78,7 +78,7 @@ void DotsBlink()
 
 void DisplayUpdate()
 {
-	//выключае все общие выводы индикаторов
+	//РІС‹РєР»СЋС‡Р°Рµ РІСЃРµ РѕР±С‰РёРµ РІС‹РІРѕРґС‹ РёРЅРґРёРєР°С‚РѕСЂРѕРІ
 	CLRPORT(COMMON_PORT, COMMON_MASK);
 	
 	//if(dimm == true)
@@ -93,13 +93,13 @@ void DisplayUpdate()
 	//
 	//if(!dispOn) return;
 	
-	//Через заданное время инвертируем переменую отвечающую за мигание цифр
+	//Р§РµСЂРµР· Р·Р°РґР°РЅРЅРѕРµ РІСЂРµРјСЏ РёРЅРІРµСЂС‚РёСЂСѓРµРј РїРµСЂРµРјРµРЅСѓСЋ РѕС‚РІРµС‡Р°СЋС‰СѓСЋ Р·Р° РјРёРіР°РЅРёРµ С†РёС„СЂ
 	if(timer[DISP_BLINK] == 0)
 	{
 		blinkDigits = !blinkDigits;
 		TaskStart(DISP_BLINK, (blinkTime * 100));
 	}
-	//Проверяем по маске цифру которую хотим мигать
+	//РџСЂРѕРІРµСЂСЏРµРј РїРѕ РјР°СЃРєРµ С†РёС„СЂСѓ РєРѕС‚РѕСЂСѓСЋ С…РѕС‚РёРј РјРёРіР°С‚СЊ
 	if(((blinkBitmask & (1 << activeDig)) != 0) && blinkDigits)
 	{
 		activeDig++;
@@ -107,11 +107,11 @@ void DisplayUpdate()
 		TaskStart(DISP_UPDATE,UPDATE_TIME);
 		return;
 	}
-	//Записываем цифру в порт сегментов
+	//Р—Р°РїРёСЃС‹РІР°РµРј С†РёС„СЂСѓ РІ РїРѕСЂС‚ СЃРµРіРјРµРЅС‚РѕРІ
 	CLRPORT(SEG_PORT, SEG_MASK);
 	SETPORT(SEG_PORT, (dispBufer[activeDig] & SEG_MASK));
 	
-	//Поджигаем цифру запиткой общего вывода
+	//РџРѕРґР¶РёРіР°РµРј С†РёС„СЂСѓ Р·Р°РїРёС‚РєРѕР№ РѕР±С‰РµРіРѕ РІС‹РІРѕРґР°
 	switch(activeDig)
 	{
 		case 0:
@@ -134,13 +134,13 @@ void DisplayUpdate()
 		activeDig = 0;
 		break;
 	}
-	//Заводим таймер для последующей отрисовки цифры
+	//Р—Р°РІРѕРґРёРј С‚Р°Р№РјРµСЂ РґР»СЏ РїРѕСЃР»РµРґСѓСЋС‰РµР№ РѕС‚СЂРёСЃРѕРІРєРё С†РёС„СЂС‹
 	//TaskStart(DISP_UPDATE,UPDATE_TIME);
 }
 
 void DisplaySet_Int(uint16_t set, uint8_t bitmask, bool animate)
 {
-	//Не обновлять буфер дисплея, если цыфры не поменялись или идёт анимация
+	//РќРµ РѕР±РЅРѕРІР»СЏС‚СЊ Р±СѓС„РµСЂ РґРёСЃРїР»РµСЏ, РµСЃР»Рё С†С‹С„СЂС‹ РЅРµ РїРѕРјРµРЅСЏР»РёСЃСЊ РёР»Рё РёРґС‘С‚ Р°РЅРёРјР°С†РёСЏ
 	if(animBusy == true) return;
 	for(uint8_t i = 0, num; i < DISPLAY_DIGITS; i++)
 	{
@@ -164,7 +164,7 @@ void DisplaySet_Int(uint16_t set, uint8_t bitmask, bool animate)
 
 void DisplaySet_Char(disp_sym* sym, bool animate)
 {
-	//Не обновлять буфер дисплея пока идёт анимация
+	//РќРµ РѕР±РЅРѕРІР»СЏС‚СЊ Р±СѓС„РµСЂ РґРёСЃРїР»РµСЏ РїРѕРєР° РёРґС‘С‚ Р°РЅРёРјР°С†РёСЏ
 	if(animBusy == true) return;
 	for(uint8_t i = 0; i <DISPLAY_DIGITS; i++)
 	{

@@ -9,10 +9,10 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-#define F_CPU 8000000UL	//частота MCU
-#define F_SCL 100000UL	//частота TWI
+#define F_CPU 8000000UL	//С‡Р°СЃС‚РѕС‚Р° MCU
+#define F_SCL 100000UL	//С‡Р°СЃС‚РѕС‚Р° TWI
 
-//Список функций, выполняемых через программную очередь
+//РЎРїРёСЃРѕРє С„СѓРЅРєС†РёР№, РІС‹РїРѕР»РЅСЏРµРјС‹С… С‡РµСЂРµР· РїСЂРѕРіСЂР°РјРјРЅСѓСЋ РѕС‡РµСЂРµРґСЊ
 typedef enum
 {
 	DISP_UPDATE,
@@ -27,7 +27,7 @@ typedef enum
 	PROCESS_COUNT,
 }Tasks;
 
-//Список режимов работы часов
+//РЎРїРёСЃРѕРє СЂРµР¶РёРјРѕРІ СЂР°Р±РѕС‚С‹ С‡Р°СЃРѕРІ
 typedef enum
 {
 	MODE_DEMO,
@@ -48,11 +48,11 @@ typedef enum
 	MODE_SET_NIGHT,
 }MODE;
 
-volatile uint16_t timerTick;			//Таймер - 1мс
-volatile uint8_t  rtcTick;				//Таймер - 1с
-volatile uint16_t timer[PROCESS_COUNT];	//Массив программных таймеров
+volatile uint16_t timerTick;			//РўР°Р№РјРµСЂ - 1РјСЃ
+volatile uint8_t  rtcTick;				//РўР°Р№РјРµСЂ - 1СЃ
+volatile uint16_t timer[PROCESS_COUNT];	//РњР°СЃСЃРёРІ РїСЂРѕРіСЂР°РјРјРЅС‹С… С‚Р°Р№РјРµСЂРѕРІ
 
-//Запуск задачи через заданное время
+//Р—Р°РїСѓСЃРє Р·Р°РґР°С‡Рё С‡РµСЂРµР· Р·Р°РґР°РЅРЅРѕРµ РІСЂРµРјСЏ
 inline void TaskStart(Tasks task, uint16_t tim)
 {
 	cli();
@@ -60,7 +60,7 @@ inline void TaskStart(Tasks task, uint16_t tim)
 	sei();
 }
 
-//Остановка задачи
+//РћСЃС‚Р°РЅРѕРІРєР° Р·Р°РґР°С‡Рё
 inline void TaskStop(Tasks task)
 {
 	cli();
