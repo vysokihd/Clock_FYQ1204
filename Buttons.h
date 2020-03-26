@@ -1,0 +1,40 @@
+/*
+ * Buttons.h
+ *
+ * Created: 02.10.2019 16:36:27
+ *  Author: d.vysokih
+ */ 
+
+
+#ifndef BUTTONS_H_
+#define BUTTONS_H_
+
+#define BUT_GETSTATE_TIME	10U //мс
+
+#define BUT_LONG_PRES	150U	//длинное нажатие, мс * 10
+#define BUT_SHORT_PRES	1U		//мс * 10
+#define BUT_NUMBER		3U		//количество кнопок
+
+//-------- define PORT ------------
+#define BUT_PORT		(void*)&PIND
+
+//-------- define PIN -------------
+#define BUT_PIN_INC		7
+#define BUT_PIN_DEC		6
+#define BUT_PIN_MODE	5
+
+//«адает положение каждой используемой кнопки
+void Button_Init();
+//ѕровер€ет и запоминает состо€ние всех кнопок при каждом запуске
+void Button_GetState(void);
+//ќпредел€ет бы ло ли долгое нажатие, после считывани€ состо€ние обнул€етс€
+bool Button_LongPress(uint8_t butPin, uint8_t* butPort);
+//ќпредел€ет было ли короткое нажатие, после считывани€ состо€ние обнул€етс€
+bool Button_ShortPress(uint8_t butPin, uint8_t* butPort);
+//ќпредел€ет текущее состо€ние кнопки
+bool Button_CurrentPress(uint8_t butPin, uint8_t* butPort);
+
+
+
+
+#endif /* BUTTONS_H_ */
