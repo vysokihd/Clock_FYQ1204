@@ -29,8 +29,6 @@ static void DS1307_init();			//Инициализация RTC
 static void Mode_Clock();			//Реализация режимов работы часов
 static void NightMode();			//Автоматическая активация ночного режима по времени
 
-
-
 int main(void)
 {
 	McuInit();				//Инициализация контроллера
