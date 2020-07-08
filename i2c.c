@@ -33,8 +33,8 @@ static volatile uint8_t size;	//размер массива данных для 
 static volatile uint8_t	i_byte;	//счетчик
 static volatile bool read;		//режим true - чтение, false - запись
 static volatile bool busy;
-static volatile uint8_t error;	//код ошибки
-
+static volatile i2c_err err;	//код ошибки
+volatile uint8_t timeout;		//таймер таймаута
 
  
 static inline void I2C_Start()
@@ -67,7 +67,8 @@ void I2C_TargetSet(uint8_t tg)
 
 uint8_t I2C_WriteByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 {
-	error = I2C_ERR_DEF;
+	timeout = I2C_TIMEOUT;
+	err = I2C_ERR_DEF;
 	i_byte = 0;
 	adres = adr;
 	data = dt;
@@ -75,13 +76,23 @@ uint8_t I2C_WriteByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 	read = false;
 	busy = true;
 	I2C_Start();
-	while(busy);
-	return error;
+	while(busy)
+	{
+		if(timeout == 0)
+		{
+			err = I2C_ERR_TIMEOUT_W;
+			break;
+		}
+	}
+	//DisplaySet_Int(err, 0xff , false);
+	
+	return err;
 }
 
 uint8_t I2C_ReadByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 {
-	error = I2C_ERR_DEF;
+	timeout = I2C_TIMEOUT;
+	err = I2C_ERR_DEF;
 	i_byte = 0;
 	adres = adr;
 	data = dt;
@@ -89,8 +100,17 @@ uint8_t I2C_ReadByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 	read = true;
 	busy = true;
 	I2C_Start();
-	while(busy);
-	return error;	
+	while(busy)
+	{
+		if(timeout == 0)
+		{
+			err = I2C_ERR_TIMEOUT_R;
+			break;
+		}
+	}
+	//DisplaySet_Int(err, 0xff , false);
+	
+	return err;	
 }
 
 ISR(TWI_vect)
@@ -100,7 +120,7 @@ ISR(TWI_vect)
 	switch(status)
 	{
 		case I2C_BUS_FAIL:
-			error = I2C_ERR_BF;
+			err = I2C_ERR_BF;
 			break;
 		case I2C_START:		//сформировани старт, пишем адрес устройства на шине I2C
 			
@@ -120,7 +140,7 @@ ISR(TWI_vect)
 		
 		case I2C_SLA_W_NACK:	//отпраивли адрес с битом записи и не получили ответ
 			I2C_Stop();
-			error = I2C_ERR_NA;	
+			err = I2C_ERR_NA;	
 			busy = false;
 			break;
 		
@@ -138,19 +158,19 @@ ISR(TWI_vect)
 			{
 				 I2C_Stop();
 				 busy = false;
-				 error = I2C_ERR_NO;
+				 err = I2C_ERR_NO;
 			}
 			break;
 		
 		case I2C_BYTE_NACK:			//нет подтверждения посланного байта
 			I2C_Stop();
-			error = I2C_ERR_NK;
+			err = I2C_ERR_NK;
 			busy = false;
 			break;
 		
 		case I2C_COLLISION:
 			I2C_Stop();
-			error = I2C_ERR_UN;
+			err = I2C_ERR_UN;
 			busy = false;
 			break;
 		
@@ -164,7 +184,7 @@ ISR(TWI_vect)
 		
 		case I2C_SLA_R_NACK:
 			I2C_Stop();
-			error = I2C_ERR_NK;
+			err = I2C_ERR_NK;
 			busy = false;
 			break;
 		
@@ -180,12 +200,12 @@ ISR(TWI_vect)
 		case I2C_RECEIVE_BYTE_NACK:
 			data[i_byte++] = TWDR;
 			I2C_Stop();
-			error = I2C_ERR_NO;
+			err = I2C_ERR_NO;
 			busy = false;
 			break;
 		
 		default:
-			error = I2C_ERR_UN;
+			err = I2C_ERR_UN;
 			busy = false;
 	}
 }

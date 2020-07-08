@@ -46,18 +46,7 @@ static uint8_t DecrBCD(uint8_t num)
 
 bool DS1307_Read()
 {
-	//if(timer[DS1307_READ] != 0) return true;
-	//uint8_t tim[sizeof(tm)];
 	I2C_ReadByAdr(0, (uint8_t*)&tm, sizeof(tm));
-	
-	//tm.tm_sec = tim[0];
-	//tm.tm_min = tim[1];
-	//tm.tm_hour = tim[2];
-	//tm.tm_wday = tim[3];
-	//tm.tm_date = tim[4];
-	//tm.tm_mon = tim[5];
-	//tm.tm_year = tim[6];
-	//TaskStart(DS1307_READ, DS1307_READTIME);
 	return true;
 }
 

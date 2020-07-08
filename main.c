@@ -220,7 +220,7 @@ void Mode_Clock()
 			}
 			else DisplaySet_Int(((tm.tm_hour << 8) | (tm.tm_min)), 0b1111 , true);
 			
-			if(rtcTick == 15)
+			if(rtcTick == 55)
 			{
 				//запуск измерения температуры
 				TaskStart(TEMP_CONVERT, 0);
@@ -598,6 +598,7 @@ ISR (TIMER2_COMP_vect)
 			timer[i]--;
 		}
 	}
+	timeout--;
 }
 	//Прерывание от пина контроллера
 ISR (INT1_vect)

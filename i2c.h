@@ -8,15 +8,20 @@
 #ifndef I2C_H_
 #define I2C_H_
 
-enum
+#define I2C_TIMEOUT		100	//Таймаут обмена данных, мс
+typedef enum
 {
 	I2C_ERR_NO = 0,		//нет ошибок
 	I2C_ERR_NA,			//нет ответа от подчиненного
 	I2C_ERR_NK,			//получен NACK
 	I2C_ERR_BF,			//ошибка шины i2c
 	I2C_ERR_UN,			//неисзветная ошибка
+	I2C_ERR_TIMEOUT_R,	//таймаут чтения
+	I2C_ERR_TIMEOUT_W,	//таймаут записи
 	I2C_ERR_DEF = 0xff	//статус неизвестен 
-};
+}i2c_err;
+
+extern volatile uint8_t timeout;
 
 void I2C_TargetSet(uint8_t target);
 uint8_t I2C_WriteByAdr(uint8_t adr, uint8_t* data, uint8_t size);
