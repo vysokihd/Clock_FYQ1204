@@ -10,31 +10,19 @@
 #include "main.h"
 #include "Buttons.h"
 
-
-//Структура хранящая состояние каждой кнопки
-static struct butState
+typedef struct
 {
 	uint8_t* port;			//порт кнопки
-	uint16_t counter;		//счётчик для реализации задержки
 	uint8_t pin;			//пин кнопки
+	uint16_t timer;			//таймер для реализации задержки
 	uint8_t pres:1;			//1 - кнопка сейчас нажата, 0 - кнопка сейчас отпущена
-	uint8_t bloked:1;		//1 - блокирована кнопка, 0 - не блокирована
 	uint8_t shortPres:1;	//1 - зафиксировано короткое нажатие
 	uint8_t longPres:1;		//1 - зафиксировано длинное нажатие
 	uint8_t prevState:1;	//предыдущее состояние кнопки
-}but[BUT_NUMBER] ;
+}butState;
 
-
-void Button_Init()
-{
-	
-	but[0].port = BUT_PORT;
-	but[1].port = BUT_PORT;
-	but[2].port = BUT_PORT;
-	but[0].pin = BUT_PIN_MODE;
-	but[1].pin = BUT_PIN_DEC;
-	but[2].pin = BUT_PIN_INC;
-}
+butState but[] = {BUT_LIST_INIT};
+#define BUT_NUMBER sizeof(but)/sizeof(butState)
 
 bool Button_LongPress(uint8_t pin, uint8_t* port)
 {
@@ -85,38 +73,37 @@ void Button_GetState()
 	{
 		//получаем текущее состояние кнопки из порта
 		btst = (((1 << but[i].pin) & (*(but[i].port))) == 0)? 1:0;
-		//если состояние не менялось и кнопка не нажата
+		//если состояние кнопки не менялось
 		if((btst == 0) && (but[i].prevState == 0)) continue;
 		
 		//если состояние поменялось на нажатое
 		if((btst == 1) && (but[i].prevState == 0))
 		{
 			but[i].prevState = btst;	//запоминаем состояние кнопки
-			but[i].counter = 0;			//обнуляем счетчик
+			but[i].timer = 0;			//обнуляем счетчик
 			but[i].shortPres = 0;		//обнуляем состояние кнопки shortPres
 			but[i].longPres = 0;		//обнуляем сотояние кнопки	longPres
-			but[i].bloked = 0;			//разрешаем работу кнопки
 			continue;
 		}
 
 		//если состояние не менялось и кнопка нажата
 		if((btst == 1) && (but[i].prevState == 1))
 		{
-			but[i].counter++;
+			but[i].timer++;
 		}
 		
 		//если кнопка нажата и вышло время BUT_SHORT_PRES
-		if((btst == 1) && (but[i].counter > BUT_SHORT_PRES))
+		if((btst == 1) && (but[i].timer > BUT_SHORT_PRES))
 		{
 			but[i].pres = 1;
 		}
 		
 		//если кнопка нажата, вышло время BUT_LONG_PRES и состояние longPres не срабатывало
-		if((btst == 1) && (but[i].counter > BUT_LONG_PRES) && (but[i].bloked == 0))
+		if((btst == 1) && (but[i].timer > BUT_LONG_PRES)) // && (but[i].bloked == 0))
 		{
 			but[i].longPres = 1;
 			but[i].shortPres = 0;
-			but[i].bloked = 1;
+			//but[i].bloked = 1;
 		}
 		
 		//если состояние поменялось на отпущеное
@@ -125,7 +112,7 @@ void Button_GetState()
 			but[i].prevState = btst;	//запоминаем состояние кнопки
 			but[i].pres = 0;
 			
-			if((but[i].counter > BUT_SHORT_PRES) && (but[i].counter < (BUT_LONG_PRES / 2)))
+			if((but[i].timer > BUT_SHORT_PRES) && (but[i].timer < (BUT_LONG_PRES / 2)))
 			{
 				but[i].shortPres = 1;
 				but[i].longPres = 0;

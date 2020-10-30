@@ -6,16 +6,13 @@
 #define PWM_PORT		OCR1A
 #define ADC_PORT		ADCH
 
-#define L_00	0
-#define L_01	15
-#define L_02	50
-#define L_03	100
-#define L_04	175
-#define L_05	255
-#define L_CNT	5
-#define DIMM_MIN_VAL	L_01
-
 extern const uint8_t dimmVal[];
+
+#define DIMM_LEVELS		0, 15, 50, 100, 175, 255
+#define DIMM_COUNT		5
+#define DIMM_MIN_VAL	5
+
+
 
 /*	Автоматическое диммирование в зависимости от датчика света
 	Функция должна быть помещена в while()*/

@@ -48,9 +48,10 @@ typedef enum
 	MODE_SET_NIGHT,
 }MODE;
 
-volatile uint16_t timerTick;			//Таймер - 1мс
-volatile uint8_t  rtcTick;				//Таймер - 1с
 volatile uint16_t timer[PROCESS_COUNT];	//Массив программных таймеров
+
+//Возвращает время в милисекундах
+uint32_t _time_ms();
 
 //Запуск задачи через заданное время
 inline void TaskStart(Tasks task, uint16_t tim)

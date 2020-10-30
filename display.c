@@ -296,7 +296,7 @@ void DisplayDayToChar(uint8_t in, disp_sym* out, uint8_t offset)
 		break;	  
 		case 2:	  
 			out[0 + offset] = CHAR_8;
-			out[1 + offset] = CHAR_H;
+			out[1 + offset] = CHAR_t;
 		break;	  
 		case 3:	  
 			out[0 + offset] = CHAR_C;

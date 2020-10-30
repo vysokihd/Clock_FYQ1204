@@ -8,8 +8,8 @@
  #include <avr/interrupt.h>
  #include <stdbool.h>
  #include "i2c.h"
- #include "display.h"
- 
+ #include "main.h"
+
  enum
  {
 	 I2C_BUS_FAIL = 0x00,			//ошибка на шине
@@ -34,31 +34,13 @@ static volatile uint8_t	i_byte;	//счетчик
 static volatile bool read;		//режим true - чтение, false - запись
 static volatile bool busy;
 static volatile i2c_err err;	//код ошибки
-volatile uint8_t timeout;		//таймер таймаута
+volatile uint32_t tim;			//время
 
- 
-static inline void I2C_Start()
-{
-	TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN) | (1 << TWIE);
-}
-static inline void I2C_Stop()
-{
-	//TWCR &= ~(1 << TWIE);
-	TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN);
-}
-static inline void I2C_Continue()
-{
-	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE);
-}
-static inline void I2C_Ack()
-{
-	TWCR = (1 << TWINT) | (1 << TWEA) | (1 << TWIE) | (1<< TWEN);
-}
-
-static inline uint8_t I2C_GetStatus()
-{
-	return 	(TWSR & (0x1f << 3));
-}
+ #define I2C_Start()		TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN) | (1 << TWIE)
+ #define I2C_Stop()			TWCR = (1 << TWINT) | (1 << TWSTO) | (1 << TWEN)
+ #define I2C_Continue()		TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWIE)
+ #define I2C_Ack()			TWCR = (1 << TWINT) | (1 << TWEA) | (1 << TWIE) | (1<< TWEN)
+ #define I2C_GetStatus()	(TWSR & (0x1f << 3))	
 
 void I2C_TargetSet(uint8_t tg)
 {
@@ -67,7 +49,7 @@ void I2C_TargetSet(uint8_t tg)
 
 uint8_t I2C_WriteByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 {
-	timeout = I2C_TIMEOUT;
+	tim = _time_ms();
 	err = I2C_ERR_DEF;
 	i_byte = 0;
 	adres = adr;
@@ -78,20 +60,18 @@ uint8_t I2C_WriteByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 	I2C_Start();
 	while(busy)
 	{
-		if(timeout == 0)
+		if(_time_ms() - tim > I2C_TIMEOUT)
 		{
 			err = I2C_ERR_TIMEOUT_W;
 			break;
 		}
 	}
-	//DisplaySet_Int(err, 0xff , false);
-	
 	return err;
 }
 
 uint8_t I2C_ReadByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 {
-	timeout = I2C_TIMEOUT;
+	tim = _time_ms();
 	err = I2C_ERR_DEF;
 	i_byte = 0;
 	adres = adr;
@@ -102,14 +82,13 @@ uint8_t I2C_ReadByAdr(uint8_t adr, uint8_t* dt, uint8_t sz)
 	I2C_Start();
 	while(busy)
 	{
-		if(timeout == 0)
+		if(_time_ms() - tim > I2C_TIMEOUT)
 		{
 			err = I2C_ERR_TIMEOUT_R;
 			break;
 		}
 	}
 	//DisplaySet_Int(err, 0xff , false);
-	
 	return err;	
 }
 

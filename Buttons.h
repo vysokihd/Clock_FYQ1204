@@ -13,7 +13,7 @@
 
 #define BUT_LONG_PRES	150U	//длинное нажатие, мс * 10
 #define BUT_SHORT_PRES	1U		//мс * 10
-#define BUT_NUMBER		3U		//количество кнопок
+//#define BUT_NUMBER		3U		//количество кнопок
 
 //-------- define PORT ------------
 #define BUT_PORT		(void*)&PIND
@@ -23,8 +23,11 @@
 #define BUT_PIN_DEC		6
 #define BUT_PIN_MODE	5
 
-//Задает положение каждой используемой кнопки
-void Button_Init();
+//Лист инициализации кнопок
+#define BUT_LIST_INIT	{.port = BUT_PORT, .pin = BUT_PIN_MODE, .timer = 0, .pres = 0, .shortPres = 0, .longPres = 0, .prevState = 0},\
+						{.port = BUT_PORT, .pin = BUT_PIN_DEC, .timer = 0, .pres = 0, .shortPres = 0, .longPres = 0, .prevState = 0},\
+						{.port = BUT_PORT, .pin = BUT_PIN_INC, .timer = 0, .pres = 0, .shortPres = 0, .longPres = 0, .prevState = 0}
+
 //Проверяет и запоминает состояние всех кнопок при каждом запуске
 void Button_GetState(void);
 //Определяет бы ло ли долгое нажатие, после считывания состояние обнуляется

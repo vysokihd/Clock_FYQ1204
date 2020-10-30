@@ -20,9 +20,12 @@ volatile bool Ds1307_ready = false;
 disp_sym sym[] = {CHAR_8, CHAR_8, CHAR_8, CHAR_8};
 MODE mode = MODE_DEMO;
 static int8_t tempComp = 0;			//Коррекция температуры
-static uint8_t dimmMode = 0;			//Режим диммирования
+static uint8_t dimmLevel = 0;			//Режим диммирования
 static bool nightMode = false;			//Ночной режим (вкл. выкл)
 static bool isNight = false;			//Сейчас ночь
+
+static volatile uint32_t timerTick;			//Таймер - 1мс
+static volatile uint8_t  rtcTick;				//Таймер - 1с
 
 static void McuInit();				//Инициализация контроллера
 static void DS1307_init();			//Инициализация RTC
@@ -32,10 +35,9 @@ static void NightMode();			//Автоматическая активация н�
 int main(void)
 {
 	McuInit();				//Инициализация контроллера
-	Button_Init();				//Инициализация кнопок
 	sei();					//Глобально разрешить прерывания
 	DS1307_init();				//Инициализация RTC
-	DimmSet(dimmVal[dimmMode]);		//Установка яркости дисплея
+	DimmSet(dimmVal[dimmLevel]);		//Установка яркости дисплея
 	
 	//Поставить в очередь на выполнение след. функция
 	TaskStart(BUT_GETSTATE, 0);		//Button_GetState()
@@ -118,13 +120,13 @@ void DS1307_init()
 		DS1307_Save();
 		DS1307_WriteRam(0, (uint8_t*)&tempComp, 1);
 		DS1307_WriteRam(1, (uint8_t*)&nightMode, 1);
-		DS1307_WriteRam(2, (uint8_t*)&dimmMode, 1);
+		DS1307_WriteRam(2, (uint8_t*)&dimmLevel, 1);
 	}
 	else
 	{
 		DS1307_ReadRam(0, (uint8_t*)&tempComp, 1);
 		DS1307_ReadRam(1, (uint8_t*)&nightMode, 1);	
-		DS1307_ReadRam(2, (uint8_t*)&dimmMode, 1);	
+		DS1307_ReadRam(2, (uint8_t*)&dimmLevel, 1);	
 	}
 		DS1307_Config(1 << SQWE_BIT);		//настройка выхода 1Гц
 }
@@ -188,6 +190,7 @@ static void WDay_Display()
 void Mode_Clock()
 {
 	if(timer[MODE_CLOCK] != 0) return;
+	bool animate = false;
 	switch(mode)
 	{
 		//------------- Режим демки при включении ---------------
@@ -210,15 +213,20 @@ void Mode_Clock()
 				Ds1307_ready = false;
 			}
 			/*Если разрешён ночной режим и сейчас ночь обнуляем rtcTick
-			для того что бы  режим отображения времени не менялся
+			для того что бы режим отображения времени не менялся
 			*/
-			if(nightMode && isNight) rtcTick = 0;
+			if(nightMode && isNight)
+			{
+				 rtcTick = 0;
+				 animate = false;
+			}
+			else animate = true;
 			
 			if((tm.tm_hour & (0xf0)) == 0)
 			{
-				DisplaySet_Int(((tm.tm_hour << 8) | (tm.tm_min)), 0b0111 , true);
+				DisplaySet_Int(((tm.tm_hour << 8) | (tm.tm_min)), 0b0111 , animate);
 			}
-			else DisplaySet_Int(((tm.tm_hour << 8) | (tm.tm_min)), 0b1111 , true);
+			else DisplaySet_Int(((tm.tm_hour << 8) | (tm.tm_min)), 0b1111 , animate);
 			
 			if(rtcTick == 55)
 			{
@@ -493,29 +501,29 @@ void Mode_Clock()
 		DotsOff();
 		if(Button_ShortPress(BUT_PIN_INC, BUT_PORT))
 		{
-			dimmMode < L_CNT ? (dimmMode++) : (dimmMode = 0);
+			dimmLevel < DIMM_COUNT ? (dimmLevel++) : (dimmLevel = 0);
 		}
 		if(Button_ShortPress(BUT_PIN_DEC, BUT_PORT))
 		{
-			dimmMode == 0 ? (dimmMode = (L_CNT)) : dimmMode--;
+			dimmLevel == 0 ? (dimmLevel = (DIMM_COUNT)) : dimmLevel--;
 		}
 		if(Button_ShortPress(BUT_PIN_MODE, BUT_PORT))
 		{
 			mode = MODE_SET_NIGHT;
-			DS1307_WriteRam(0x02, (uint8_t*)&dimmMode, 1);
+			DS1307_WriteRam(0x02, (uint8_t*)&dimmLevel, 1);
 		}
 		if(Button_LongPress(BUT_PIN_MODE, BUT_PORT))
 		{
 			mode = MODE_TEST;
 		}
 		
-		DisplayIntToChar(dimmMode, sym);
+		DisplayIntToChar(dimmLevel, sym);
 		sym[0] = CHAR_L;
 		sym[1] = CHAR_PROCHERK;
 		DisplaySet_Char(sym, false);
 		
 		//Установка значения PWM
-		DimmSet(dimmVal[dimmMode]);
+		DimmSet(dimmVal[dimmLevel]);
 		
 		break;
 		//-------- Включение-отключение ночного режима ----------
@@ -570,15 +578,20 @@ void Mode_Clock()
 	//Автоматическая активация ночного режима по времени
 static void NightMode()
 {
-	uint8_t morning = 6;
-	uint8_t evening = 0x23;
-		
-	//Проверка день-ночь
-	if((tm.tm_hour >= morning) && (tm.tm_hour < evening))
+	if(ADC_PORT > 0x60)
 	{
 		isNight = false;
 	}
 	else isNight = true;
+}
+
+//Возвращает время в милисекундах
+uint32_t _time_ms()
+{
+	cli();
+	uint32_t tm = timerTick;
+	sei();
+	return tm;
 }
 
 /********************************************************************/
@@ -587,9 +600,10 @@ static void NightMode()
 	//Прерывание от таймера
 ISR (TIMER2_COMP_vect)
 {
+	
+	timerTick++;
 	//Обновить индикацию на дисплее
 	DisplayUpdate();
-	
 	//Декремент массива таймеров
 	for(uint8_t i = 0; i < PROCESS_COUNT; i++)
 	{
@@ -598,7 +612,6 @@ ISR (TIMER2_COMP_vect)
 			timer[i]--;
 		}
 	}
-	timeout--;
 }
 	//Прерывание от пина контроллера
 ISR (INT1_vect)

@@ -5,15 +5,7 @@
 #include "main.h"
 
 static bool modeAuto = false;
-const uint8_t dimmVal[]=
-{
-	L_00,
-	L_01,
-	L_02,
-	L_03,
-	L_04,
-	L_05,
-};
+const uint8_t dimmVal[]= {DIMM_LEVELS};
 
 void Dimm()
 {
