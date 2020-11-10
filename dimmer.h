@@ -10,7 +10,7 @@ extern const uint8_t dimmVal[];
 
 #define DIMM_LEVELS		0, 15, 50, 100, 175, 255
 #define DIMM_COUNT		5
-#define DIMM_MIN_VAL	5
+#define DIMM_MIN_VAL	10
 
 
 

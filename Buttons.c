@@ -16,6 +16,7 @@ typedef struct
 	uint8_t pin;			//пин кнопки
 	uint16_t timer;			//таймер для реализации задержки
 	uint8_t pres:1;			//1 - кнопка сейчас нажата, 0 - кнопка сейчас отпущена
+	uint8_t bloked:1;		//1 - блокирована кнопка, 0 - не блокирована
 	uint8_t shortPres:1;	//1 - зафиксировано короткое нажатие
 	uint8_t longPres:1;		//1 - зафиксировано длинное нажатие
 	uint8_t prevState:1;	//предыдущее состояние кнопки
@@ -83,6 +84,7 @@ void Button_GetState()
 			but[i].timer = 0;			//обнуляем счетчик
 			but[i].shortPres = 0;		//обнуляем состояние кнопки shortPres
 			but[i].longPres = 0;		//обнуляем сотояние кнопки	longPres
+			but[i].bloked = 0;			//разрешаем работу кнопки
 			continue;
 		}
 
@@ -99,11 +101,11 @@ void Button_GetState()
 		}
 		
 		//если кнопка нажата, вышло время BUT_LONG_PRES и состояние longPres не срабатывало
-		if((btst == 1) && (but[i].timer > BUT_LONG_PRES)) // && (but[i].bloked == 0))
+		if((btst == 1) && (but[i].timer > BUT_LONG_PRES) && (but[i].bloked == 0))
 		{
 			but[i].longPres = 1;
 			but[i].shortPres = 0;
-			//but[i].bloked = 1;
+			but[i].bloked = 1;
 		}
 		
 		//если состояние поменялось на отпущеное
