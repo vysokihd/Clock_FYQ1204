@@ -43,7 +43,9 @@ typedef enum
 	MODE_SET_TEMP,
 	MODE_MAN_TEMP,
 	MODE_MAN_DATE,
-	MODE_TEST,
+	MODE_MAN_SEC,
+	MODE_TEST_1,
+	MODE_TEST_2,
 	MODE_SET_DIMM,
 	MODE_SET_NIGHT,
 }MODE;
@@ -57,7 +59,11 @@ uint32_t _time_ms();
 inline void TaskStart(Tasks task, uint16_t tim)
 {
 	cli();
-	timer[task] = tim;
+	//Запускать задачу только если она выполнилась 
+//	if(timer[task] == 0xFFFF)
+	{
+		timer[task] = tim;
+	}
 	sei();
 }
 
