@@ -60,7 +60,6 @@ bool DS1307_Save()
 bool DS1307_Config(uint8_t config)
 {
 	I2C_WriteByAdr(0x07, &config, 1);
-	
 	return true;
 }
 
@@ -73,14 +72,14 @@ bool DS1307_Status()
 }
 
 
-bool DS1307_ReadRam(uint8_t adr, uint8_t* data, uint8_t size)
+bool DS1307_ReadRam(uint8_t adr, void* data, uint8_t size)
 {
 	if(adr + size > DS1307_RAMSIZE) return false;
 	I2C_ReadByAdr(adr + RAM_START, data, size);
 	return true;
 }
 
-bool DS1307_WriteRam(uint8_t adr, uint8_t* data, uint8_t size)
+bool DS1307_WriteRam(uint8_t adr, void* data, uint8_t size)
 {
 	if(adr + size > DS1307_RAMSIZE) return false;
 	I2C_WriteByAdr(adr + RAM_START, data, size);

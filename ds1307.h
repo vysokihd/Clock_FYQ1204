@@ -40,10 +40,10 @@ bool DS1307_Status();
 		//false - часы остановлены
 
 //---------- прочитать из внутреннего RAM -----------------
-bool DS1307_ReadRam(uint8_t adr, uint8_t* data, uint8_t size);
+bool DS1307_ReadRam(uint8_t adr, void* data, uint8_t size);
 
 //---------- записать во внутренний RAM ---------------
-bool DS1307_WriteRam(uint8_t adr, uint8_t* data, uint8_t size);
+bool DS1307_WriteRam(uint8_t adr, void* data, uint8_t size);
 
 //-------------- Функции установки даты времени -------------------
 void DS1307_incrMin();
