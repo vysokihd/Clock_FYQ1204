@@ -10,20 +10,24 @@ const uint8_t dimmVal[]= {DIMM_LEVELS};
 void Dimm()
 {
 	if(timer[DIMMER] != 0) return;
-	
-	if (PWM_PORT < (ADC_PORT))
+	if(PWM_PORT < (ADC_PORT))
 	{
 		PWM_PORT++;
 	}
-	else if(PWM_PORT > (ADC_PORT))
+	else if((PWM_PORT > ADC_PORT) && (PWM_PORT > DIMM_MIN_VAL))
 	{
-		if(PWM_PORT > DIMM_MIN_VAL)
-		{
-			PWM_PORT--;
-		}
+		PWM_PORT--;
 	}
 	
-	TaskStart(DIMMER, 20);
+	if(PWM_PORT < 20)
+	{
+		TaskStart(DIMMER, 100);
+	}
+	else if(PWM_PORT < 40)
+	{
+		TaskStart(DIMMER, 50);
+	}
+	else TaskStart(DIMMER, 20);
 }
 
 //Установка состояния диммера
