@@ -17,7 +17,6 @@
 #define DISPLAY_DIGITS		4U
 #define UPDATE_TIME			2U
 #define ANIMATE_TIME		80U
-#define DOTS_BLINK_TIME		510U
 
 #define DOTS_PORT			PORTD
 #define DOTS_PIN			4
@@ -135,7 +134,7 @@ void DotsOn();
 void DotsOff();
 //Функция включения мигания точек
 void DotsBlinkOn();
-//Мигание точек, функция должна быть помещена в бесконечный while
+//Мигание точек, вызов функции инвертирует состояние точек
 void DotsBlink();
 
 

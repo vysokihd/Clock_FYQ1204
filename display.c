@@ -11,6 +11,7 @@
 #include "main.h"
 
 //Выбор типа дисплея
+#define INVPORT(por, mask)	por ^= (mask)
 #if defined(COMMON_ANODE)
 	#define SETPORT(por, mask)	por &= ~(mask)	
 	#define CLRPORT(por, mask)	por |= (mask)
@@ -18,7 +19,7 @@
 	#define SETPORT(por, mask)	por |= (mask)
 	#define CLRPORT(por, mask)	por &= ~(mask)
 #else 
-	#error "Display Type Not Defined"
+	#error "Display Type Not Defined in display.h"
 #endif	
 
 
@@ -36,43 +37,31 @@ static bool dispOn = true;			//true - разрешить, false - запрети
 static void SetClearSegment(uint8_t set, uint8_t clear);
 
 bool dotsStatus = false;
+bool blink = false;
 
 void DotsOn()
 {
-	TaskStop(DOTS_BLINK);
-	dotsStatus = true;
+	//TaskStop(DOTS_BLINK);
+	//dotsStatus = true;
+	blink = false;
 	SETPORT(DOTS_PORT, (1 << DOTS_PIN));
 }
 
 void DotsOff()
 {
-	TaskStop(DOTS_BLINK);
-	dotsStatus = false;
+	blink = false;
 	CLRPORT(DOTS_PORT, (1 << DOTS_PIN));
 }
 
 void DotsBlinkOn()
 {
-	TaskStart(DOTS_BLINK,DOTS_BLINK_TIME);
+	blink = true;
+//	CLRPORT(DOTS_PORT, (1 << DOTS_PIN));
 }
 
 void DotsBlink()
 {
-	//проверка времени
-	if(timer[DOTS_BLINK] != 0) return;
-	
-	if(dotsStatus == true)
-	{
-		dotsStatus = false;
-		CLRPORT(DOTS_PORT, (1 << DOTS_PIN));
-	}
-	else
-	{
-		dotsStatus = true;
-		SETPORT(DOTS_PORT, (1 << DOTS_PIN));
-	}
-	
-	TaskStart(DOTS_BLINK, DOTS_BLINK_TIME);	
+	if(blink) INVPORT(DOTS_PORT, (1 << DOTS_PIN));
 }
 
 
@@ -103,8 +92,7 @@ void DisplayUpdate()
 	if(((blinkBitmask & (1 << activeDig)) != 0) && blinkDigits)
 	{
 		activeDig++;
-		if(activeDig == DISPLAY_DIGITS) activeDig = 0;
-		TaskStart(DISP_UPDATE,UPDATE_TIME);
+		activeDig %= DISPLAY_DIGITS;
 		return;
 	}
 	//Записываем цифру в порт сегментов
