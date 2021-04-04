@@ -112,7 +112,9 @@ static void therm_write_byte(uint8_t byte){
 #define THERM_DECIMAL_STEPS_12BIT 625 //.0625
 
 uint8_t state = 0;
+int16_t tempRaw;
 int16_t tempHex;
+int16_t tempBcd;
 ds18b20 status;
 
 // читаем температуру с датчика
@@ -142,20 +144,24 @@ void Ds18b20_ConvertTemp()
 		therm_reset();
 		therm_write_byte(THERM_CMD_SKIPROM);
 		therm_write_byte(THERM_CMD_RSCRATCHPAD);
-		uint16_t a = therm_read_byte();
-		uint16_t b = therm_read_byte();
+		uint8_t a = therm_read_byte();
+		uint8_t b = therm_read_byte();
 				
-		tempHex = (b << 8) | a;
-		//*(&tempHex + 0) = 0x12;//therm_read_byte();
-		//(&tempHex)[1] = 0xab;//therm_read_byte();
-		//tempHex = 0xabcd;
+		//Температура в сыром виде с датчика
+		tempRaw = (b << 8) | a;
+		//Температура в нормальном виде в hex-формате (пример: 25.15гр, читается как 2515)
+		tempHex = (int32_t)tempRaw * THERM_DECIMAL_STEPS_12BIT / 100;
+		//Перевод числа из HEX в BCD
+		int16_t temp = tempHex;
+		tempBcd = temp % 10;
+		temp /= 10;
+		tempBcd |= (temp % 10) << 4;
+		temp /= 10;
+		tempBcd |= (temp % 10) << 8;
+		temp /= 10;
+		tempBcd |= temp << 12;
+
 		therm_reset();
-		
-		//digit=temperature[0]>>4;
-		//digit|=(temperature[1]&0x7)<<4;
-		//
-		//decimal=temperature[0]&0xf;
-		//decimal*=THERM_DECIMAL_STEPS_12BIT;
 		state = 0;
 		status = DS18B20_DATAREADY;
 		TaskStop(TEMP_CONVERT);
@@ -166,27 +172,28 @@ void Ds18b20_ConvertTemp()
 int16_t Ds1820_ReadTempBCD(int8_t compens)
 {
 	int16_t temp;
-	int16_t tempBcd = 0;
+	int16_t Bcd = 0;
 	//if(status != DS18B20_DATAREADY)
 	//{
 		//return 0xffff;
 	//}
-	if(tempHex >= 0)
-	{	
-		temp = (tempHex >> 4) + compens;
-	}
-	else temp = -1 * (tempHex >> 4) + compens;
+		if(tempRaw >= 0)
+		{	
+			temp = (tempRaw >> 4) + compens;
+		}
+		else temp = -1 * (tempRaw >> 4) + compens;
 	//Перевод числа из HEX в BCD
-	tempBcd = temp % 10;
+	Bcd = temp % 10;
 	temp /= 10;
-	tempBcd |= (temp % 10) << 4;
+	Bcd |= temp << 4;
+		
 	//Если число было отрицательным, пишем 1 в старший разряд
-	if(tempHex < 0)
+	if(tempRaw < 0)
 	{
-		tempBcd |= (1 << 15);
+		Bcd |= (1 << 15);
 	}		
 	
-	return tempBcd;
+	return Bcd;
 	//return tempHex;
 }
 

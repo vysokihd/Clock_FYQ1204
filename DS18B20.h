@@ -15,7 +15,9 @@
 #define THERM_PIN PIND
 #define THERM_DQ PD2
 
+extern int16_t tempRaw;
 extern int16_t tempHex;
+extern int16_t tempBcd;
 
 typedef enum
 {
