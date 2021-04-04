@@ -9,10 +9,12 @@
 #ifndef BUTTONS_H_
 #define BUTTONS_H_
 
-#define BUT_GETSTATE_TIME	10U //мс
+#define BUT_GETSTATE_TIME	10 //мс, период сканирования кнопок
+#define BUT_RESET_TIME		10 //мс*10, время сброса необработанного состояния кнопок
 
-#define BUT_LONG_PRES	150U	//длинное нажатие, мс * 10
-#define BUT_SHORT_PRES	1U		//мс * 10
+#define BUT_LONG_PRES	150	//мс*10, длинное нажатие
+#define BUT_SHORT_PRES	2	//мс*10, короткое нажатие
+
 //#define BUT_NUMBER		3U		//количество кнопок
 
 //-------- define PORT ------------

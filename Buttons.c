@@ -73,52 +73,49 @@ void Button_GetState()
 	for(uint8_t i = 0, btst; i < BUT_NUMBER; i++)
 	{
 		//получаем текущее состояние кнопки из порта
-		btst = (((1 << but[i].pin) & (*(but[i].port))) == 0)? 1:0;
-		//если состояние кнопки не менялось
-		if((btst == 0) && (but[i].prevState == 0)) continue;
+		btst = (((1 << but[i].pin) & (*(but[i].port))) == 0)? 0 : 1;
+
+		//кнопка не нажата и состояние не менялось
+		if(btst == 1 && (but[i].prevState == 1))
+		{
+			//сброс состояния кнопки через некоторое время
+			if(but[i].timer > BUT_RESET_TIME)
+			{
+				but[i].shortPres = 0;
+				but[i].longPres = 0;
+			}
+			else but[i].timer++;
+			continue;
+		}
 		
-		//если состояние поменялось на нажатое
-		if((btst == 1) && (but[i].prevState == 0))
+		//кнопка поменяла состояние на нажатое
+		if(btst == 0 && (but[i].prevState == 1))
 		{
 			but[i].prevState = btst;	//запоминаем состояние кнопки
 			but[i].timer = 0;			//обнуляем счетчик
 			but[i].shortPres = 0;		//обнуляем состояние кнопки shortPres
-			but[i].longPres = 0;		//обнуляем сотояние кнопки	longPres
+			but[i].longPres = 0;		//обнуляем состояние кнопки	longPres
 			but[i].bloked = 0;			//разрешаем работу кнопки
-			continue;
 		}
-
-		//если состояние не менялось и кнопка нажата
-		if((btst == 1) && (but[i].prevState == 1))
+		//кнопка нажата и состояние не менялось
+		else if((btst == 0) && (but[i].prevState == 0) && !but[i].bloked)
 		{
-			but[i].timer++;
+			if(but[i].timer > BUT_LONG_PRES)
+			{
+				but[i].longPres = 1;
+				but[i].bloked = 1;
+			}
+			else but[i].timer++;
 		}
-		
-		//если кнопка нажата и вышло время BUT_SHORT_PRES
-		if((btst == 1) && (but[i].timer > BUT_SHORT_PRES))
+		//кнопка поменяла состояние на отпущеное
+		else if(btst == 1 && but[i].prevState == 0)
 		{
-			but[i].pres = 1;
-		}
-		
-		//если кнопка нажата, вышло время BUT_LONG_PRES и состояние longPres не срабатывало
-		if((btst == 1) && (but[i].timer > BUT_LONG_PRES) && (but[i].bloked == 0))
-		{
-			but[i].longPres = 1;
-			but[i].shortPres = 0;
-			but[i].bloked = 1;
-		}
-		
-		//если состояние поменялось на отпущеное
-		if((btst == 0) && (but[i].prevState == 1))
-		{
-			but[i].prevState = btst;	//запоминаем состояние кнопки
-			but[i].pres = 0;
-			
-			if((but[i].timer > BUT_SHORT_PRES) && (but[i].timer < (BUT_LONG_PRES / 2)))
+			if(but[i].timer > BUT_SHORT_PRES && but[i].timer < BUT_LONG_PRES/2)
 			{
 				but[i].shortPres = 1;
-				but[i].longPres = 0;
 			}
+			but[i].prevState = btst;
+			but[i].timer = 0;
 		}
 	}
 	TaskStart(BUT_GETSTATE, BUT_GETSTATE_TIME);
