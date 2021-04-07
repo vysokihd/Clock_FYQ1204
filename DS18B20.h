@@ -30,7 +30,7 @@ typedef enum
 //Старт замера температуры
 void Ds18b20_ConvertTemp();
 //Чтение температуры
-int16_t Ds1820_ReadTempBCD(int8_t compens);
+//int16_t Ds1820_ReadTempBCD();
 //Получение сотояния
 ds18b20 Ds18b20_GetStatus(); 
 

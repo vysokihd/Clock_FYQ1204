@@ -169,33 +169,33 @@ void Ds18b20_ConvertTemp()
 	}
 }
 
-int16_t Ds1820_ReadTempBCD(int8_t compens)
-{
-	int16_t temp;
-	int16_t Bcd = 0;
-	//if(status != DS18B20_DATAREADY)
+//int16_t Ds1820_ReadTempBCD()
+//{
+	//int16_t temp;
+	//int16_t Bcd = 0;
+	////if(status != DS18B20_DATAREADY)
+	////{
+		////return 0xffff;
+	////}
+		////if(tempRaw >= 0)
+		////{	
+			////temp = (tempRaw >> 4) + compens;
+		////}
+		////else temp = -1 * (tempRaw >> 4) + compens;
+	////Перевод числа из HEX в BCD
+	//Bcd = temp % 10;
+	//temp /= 10;
+	//Bcd |= temp << 4;
+		//
+	////Если число было отрицательным, пишем 1 в старший разряд
+	//if(tempRaw < 0)
 	//{
-		//return 0xffff;
-	//}
-		if(tempRaw >= 0)
-		{	
-			temp = (tempRaw >> 4) + compens;
-		}
-		else temp = -1 * (tempRaw >> 4) + compens;
-	//Перевод числа из HEX в BCD
-	Bcd = temp % 10;
-	temp /= 10;
-	Bcd |= temp << 4;
-		
-	//Если число было отрицательным, пишем 1 в старший разряд
-	if(tempRaw < 0)
-	{
-		Bcd |= (1 << 15);
-	}		
-	
-	return Bcd;
-	//return tempHex;
-}
+		//Bcd |= (1 << 15);
+	//}		
+	//
+	//return Bcd;
+	////return tempHex;
+//}
 
 ds18b20 Ds18b20_GetStatus()
 {

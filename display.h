@@ -38,9 +38,6 @@
 #define SEG_G				7
 #define SEG_MASK			((1 << SEG_A) | (1 << SEG_B) | (1 << SEG_C) | (1 << SEG_D) | (1 << SEG_E) | (1 << SEG_F) | (1 << SEG_G))
 
-#define PWM_PORT			OCR1A
-#define LIGHT_SENS			ADCH
-
 typedef enum
 {
 	CHAR_0 = 		((1 << SEG_A) | (1 << SEG_B) | (1 << SEG_C) | (1 << SEG_D) | (1 << SEG_E) | (1 << SEG_F)),	//0

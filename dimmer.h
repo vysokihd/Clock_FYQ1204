@@ -2,9 +2,10 @@
 #define DIMMER_H_
 
 #include <avr/io.h>
+#include "main.h"
 
 #define PWM_PORT		OCR1A
-#define ADC_PORT		ADCH
+#define ADC_PORT		adc_value
 
 extern const uint8_t dimmVal[];
 
