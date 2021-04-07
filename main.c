@@ -15,14 +15,15 @@
 #include "DS18B20.h"
 #include "Buttons.h"
 #include "dimmer.h"
+#include "avr/eeprom.h"
 
 volatile bool Ds1307_ready = false;
 disp_sym sym[] = {CHAR_H, CHAR_E, CHAR_ll, CHAR_0};
 MODE mode = MODE_DEMO;
-static int8_t tempComp = 0;				//Коррекция температуры
-static uint8_t dimmLevel = 0;			//Режим диммирования
-static bool nightMode = false;			//Ночной режим (вкл. выкл)
-static bool isNight = false;			//Сейчас ночь
+static int8_t tempComp;				//Коррекция температуры
+static uint8_t dimmLevel;			//Режим диммирования
+static bool nightMode;				//Ночной режим (вкл. выкл)
+static bool isNight = false;		//Сейчас ночь
 
 static volatile uint32_t timerTick = 0;			//Таймер - 1мс
 static volatile uint8_t  rtcTick = 0;			//Таймер - 1с
@@ -32,11 +33,21 @@ static void DS1307_init();			//Инициализация RTC
 static void Mode_Clock();			//Реализация режимов работы часов
 static void NightMode();			//Автоматическая активация ночного режима по времени
 
+
+//Данные размещённые в EEPROM
+uint8_t ee_night_mode EEMEM = 0;			//Ночной режим (вкл. выкл)
+uint8_t ee_dimm_lev EEMEM = 0;				//Режим диммированияu
+uint8_t ee_tempComp EEMEM = -2;				//Коррекция температуры
+uint8_t ee_time_corr EEMEM = 0;				//Коррекция времени
+uint8_t ee_delay_chg EEMEM = 35;			//Период индикации времени
+
+
+
 int main(void)
 {
-	McuInit();				//Инициализация контроллера
-	sei();					//Глобально разрешить прерывания
-	DS1307_init();				//Инициализация RTC
+	McuInit();							//Инициализация контроллера
+	sei();								//Глобально разрешить прерывания
+	DS1307_init();						//Инициализация RTC
 	DimmSet(dimmVal[dimmLevel]);		//Установка яркости дисплея
 	
 	//Поставить в очередь на выполнение след. функция
@@ -106,7 +117,12 @@ void McuInit()
 	
 	//------------------ Инициализация АЦП ----------------------
 	ADMUX = (1 << REFS1) | (1 << REFS0) | (1 << ADLAR) | (0b111 << MUX0); //Внутреннее опорное 2.54В | выравнивание влево | подкл. в ADC7
-	ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADFR) | (0 << ADIE) | (0b111 << ADPS0); //АЦП вкл | старт | циклическое | прерывание | делитель
+	ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADFR) | (1 << ADIE) | (0b111 << ADPS0); //АЦП вкл | старт | циклическое | прерывание | делитель
+	
+	//Чтение данных из EEPROM
+	tempComp = eeprom_read_byte(&ee_tempComp);		//Коррекция температуры
+	dimmLevel = eeprom_read_byte(&ee_dimm_lev);			//Режим диммирования
+	nightMode = eeprom_read_byte(&ee_night_mode);			//Ночной режим (вкл. выкл)
 }
 	//Инициализация DS1307
 void DS1307_init()
@@ -122,15 +138,15 @@ void DS1307_init()
 		tm.tm_mon = 0x09;
 		tm.tm_year = 0x19;
 		DS1307_Save();
-		DS1307_WriteRam(0, &tempComp, 1);
-		DS1307_WriteRam(1, &nightMode, 1);
-		DS1307_WriteRam(2, &dimmLevel, 1);
+		//DS1307_WriteRam(0, &tempComp, 1);
+		//DS1307_WriteRam(1, &nightMode, 1);
+		//DS1307_WriteRam(2, &dimmLevel, 1);
 	}
 	else
 	{
-		DS1307_ReadRam(0, &tempComp, 1);
-		DS1307_ReadRam(1, &nightMode, 1);	
-		DS1307_ReadRam(2, &dimmLevel, 1);	
+		//DS1307_ReadRam(0, &tempComp, 1);
+		//DS1307_ReadRam(1, &nightMode, 1);	
+		//DS1307_ReadRam(2, &dimmLevel, 1);	
 	}
 		DS1307_Config(1 << SQWE_BIT);		//настройка выхода 1Гц
 }
@@ -152,7 +168,7 @@ static void Back_Normal_Mode()
 	//Вывод на дисплей текущей температуры (для Mode_Clock)
 static void Temp_Display()
 {
-	int16_t tempr;
+	int16_t tempr = tempBcd + tempComp *100;
 	ds18b20 sts = Ds18b20_GetStatus();
 	if(sts == DS18B20_NA)
 	{
@@ -164,17 +180,15 @@ static void Temp_Display()
 	}
 	else if(sts == DS18B20_DATAREADY)
 	{
-		tempr = Ds1820_ReadTempBCD(tempComp);
-		//DotsOff();
 		if(tempr >= 0)
 		{
-			DisplayIntToChar((tempr << 8), sym);
+			DisplayIntToChar(tempr, sym);
 			sym[2] = CHAR_GRAD;
 			sym[3] = CHAR_C;
 		}
 		else
 		{
-			DisplayIntToChar((tempr << 4), sym);
+			DisplayIntToChar(tempr >> 4, sym);
 			sym[0] = CHAR_PROCHERK;
 			sym[3] = CHAR_GRAD;
 		}
@@ -240,7 +254,7 @@ void Mode_Clock()
 			}
 			else DisplaySet_Int(((tm.tm_hour << 8) | (tm.tm_min)), 0b1111 , animate);
 			
-			if(rtcTick == 55)
+			if(rtcTick == eeprom_read_byte(&ee_delay_chg))
 			{
 				//запуск измерения температуры
 				TaskStart(TEMP_CONVERT, 0);
@@ -523,7 +537,8 @@ void Mode_Clock()
 			if(Button_ShortPress(BUT_PIN_MODE, BUT_PORT))
 			{
 				mode = MODE_NORM_TIME;
-				DS1307_WriteRam(0, (uint8_t*)&tempComp, 1);
+				//DS1307_WriteRam(0, (uint8_t*)&tempComp, 1);
+				eeprom_write_byte(&ee_tempComp, tempComp);
 				rtcTick = 0;
 				//DotsBlinkOn();
 			}
@@ -554,7 +569,8 @@ void Mode_Clock()
 		if(Button_ShortPress(BUT_PIN_MODE, BUT_PORT))
 		{
 			mode = MODE_SET_NIGHT;
-			DS1307_WriteRam(0x02, (uint8_t*)&dimmLevel, 1);
+			//DS1307_WriteRam(0x02, (uint8_t*)&dimmLevel, 1);
+			eeprom_write_byte(&ee_dimm_lev, dimmLevel);
 		}
 		if(Button_LongPress(BUT_PIN_MODE, BUT_PORT))
 		{
@@ -601,14 +617,15 @@ void Mode_Clock()
 				mode = MODE_NORM_TIME;
 				rtcTick = 0;
 				//DotsBlinkOn();
-				DS1307_WriteRam(0x01, (uint8_t*)&nightMode, 1);
+				//DS1307_WriteRam(0x01, (uint8_t*)&nightMode, 1);
+				eeprom_write_byte(&ee_night_mode, nightMode);
 			}
 		break;
 		
 		//---------------------- Тестовый режим --------------------------
 		case MODE_TEST_1:
 		DotsOff();
-		DisplaySet_Int(ADCH, 0b0011, false);
+		DisplaySet_Int(adc_value, 0b0011, false);
 		if(Button_ShortPress(BUT_PIN_MODE,BUT_PORT))
 		{
 			mode = MODE_TEST_2;
@@ -689,4 +706,19 @@ ISR (INT1_vect)
 	//if(isNight && nightMode) MCUCR |= (1 << ISC10);
 	//else MCUCR ^= (1 << ISC10);
 	//rtcTick++;
+}
+
+ISR (ADC_vect)
+{
+	static uint32_t value = 0;
+	static uint16_t i = 0;
+	int counts = 4096;
+	value+=ADCH;
+	i++;
+	if(i == counts)
+	{
+		adc_value = value / counts;
+		value = 0;
+		i = 0;
+	}
 }

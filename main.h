@@ -51,6 +51,7 @@ typedef enum
 }MODE;
 
 volatile uint16_t timer[PROCESS_COUNT];	//Массив программных таймеров
+volatile uint8_t adc_value;
 
 //Возвращает время в милисекундах
 uint32_t _time_ms();
